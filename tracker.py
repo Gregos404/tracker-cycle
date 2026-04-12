@@ -55,28 +55,24 @@ if not donnees:
     # Sauvegarde immédiate
     sauvegarder_donnees(derniere_date.strftime("%Y-%m-%d"), duree_cycle)
 
-# --- CALCULS ET AFFICHAGE ---
+# --- CALCULS INTELLIGENTS ---
 aujourdhui = datetime.now()
-jours_ecoules = (aujourdhui - derniere_date).days
-prochaine_date = derniere_date + timedelta(days=duree_cycle)
+jours_ecoules_total = (aujourdhui - derniere_date).days
+
+# Si on a dépassé la durée du cycle, on calcule où on en est dans le cycle ACTUEL
+jour_du_cycle_actuel = (jours_ecoules_total % duree_cycle) + 1
+nb_cycles_passes = jours_ecoules_total // duree_cycle
+
+# Estimation des prochaines règles réelles (dans le futur)
+prochaine_date = derniere_date + timedelta(days=(nb_cycles_passes + 1) * duree_cycle)
 
 print("\n" + "="*35)
 print(f"📍 Aujourd'hui : {aujourdhui.strftime('%d/%m/%Y')}")
-print(f"📅 Jour du cycle : {jours_ecoules + 1}")
-print(f"🚀 Prochaines règles : {prochaine_date.strftime('%d/%m/%Y')}")
 
-# Logique des phases
-if jours_ecoules < 0:
-    print("Statut : La date est dans le futur !")
-elif jours_ecoules <= 5:
-    print("Statut : Phase Menstruelle 🩸")
-elif jours_ecoules <= 13:
-    print("Statut : Phase Folliculaire ✨")
-elif jours_ecoules == 14:
-    print("Statut : Ovulation 🥚 (Fertilité maximale)")
-elif jours_ecoules <= duree_cycle:
-    print("Statut : Phase Lutéale 🌙")
+if nb_cycles_passes > 0:
+    print(f"⚠️ {nb_cycles_passes} cycle(s) semble(nt) avoir été sauté(s).")
+    print(f"🔄 Estimation basée sur le cycle actuel (Jour {jour_du_cycle_actuel})")
 else:
-    retard = jours_ecoules - duree_cycle
-    print(f"Statut : Cycle terminé depuis {retard} jour(s). Nouveau cycle attendu !")
-print("="*35)
+    print(f"📅 Jour du cycle : {jour_du_cycle_actuel}")
+
+print(f"🚀 Prochaines règles prévues : {prochaine_date.strftime('%d/%m/%Y')}")
