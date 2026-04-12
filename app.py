@@ -24,6 +24,9 @@ class TrackerApp(ctk.CTk):
         self.entry_cycle = ctk.CTkEntry(self, placeholder_text="Durée cycle (ex: 28)")
         self.entry_cycle.pack(pady=10)
 
+        self.entry_regles_duree = ctk.CTkEntry(self, placeholder_text="Durée des règles (ex: 5)")
+        self.entry_regles_duree.pack(pady=10)
+
         self.btn_save = ctk.CTkButton(self, text="Enregistrer & Calculer", command=self.action_calculer)
         self.btn_save.pack(pady=20)
 
@@ -63,16 +66,43 @@ class TrackerApp(ctk.CTk):
         except ValueError:
             self.label_status.configure(text="❌ Erreur de format !")
 
-    def calculer_logique(self, date_brute, duree_cycle):
+    def calculer_logique(self, date_brute, duree_cycle, duree_regles=5):
         derniere_date = datetime.strptime(date_brute, "%Y-%m-%d")
         aujourdhui = datetime.now()
         
+        # Calculs de base
         jours_totaux = (aujourdhui - derniere_date).days
+        nb_cycles_passes = jours_totaux // duree_cycle
+        debut_cycle_actuel = derniere_date + timedelta(days=nb_cycles_passes * duree_cycle)
         jour_actuel = (jours_totaux % duree_cycle) + 1
-        prochaine = derniere_date + timedelta(days=((jours_totaux // duree_cycle) + 1) * duree_cycle)
+        
+        # Dates des phases
+        fin_regles = debut_cycle_actuel + timedelta(days=duree_regles - 1)
+        ovulation = debut_cycle_actuel + timedelta(days=duree_cycle - 14)
+        prochaine = debut_cycle_actuel + timedelta(days=duree_cycle)
 
-        self.label_status.configure(text=f"Jour du cycle : {jour_actuel}")
-        self.label_prochaine.configure(text=f"Prochaines règles : {prochaine.strftime('%d/%m/%Y')}")
+        # --- LOGIQUE DE COULEUR ---
+        couleur_statut = "white" # Par défaut
+        message_statut = f"Jour du cycle : {jour_actuel}"
+
+        if debut_cycle_actuel <= aujourdhui <= fin_regles:
+            couleur_statut = "#FF4B4B" # Rouge/Rose vif pour les règles
+            message_statut += " 🩸 (Période de règles)"
+        elif (ovulation - timedelta(days=2)) <= aujourdhui <= (ovulation + timedelta(days=1)):
+            couleur_statut = "#FFD700" # Or pour la fertilité haute
+            message_statut += " 🥚 (Fenêtre de fertilité)"
+        
+        # Mise à jour des labels
+        self.label_status.configure(text=message_statut, text_color=couleur_statut)
+        
+        texte_phases = (
+            f"🩸 Règles : du {debut_cycle_actuel.strftime('%d/%m')} au {fin_regles.strftime('%d/%m')}\n"
+            f"✨ Phase Folliculaire : jusqu'au {ovulation.strftime('%d/%m')}\n"
+            f"🥚 Ovulation : {ovulation.strftime('%d/%m')}\n"
+            f"🌙 Phase Lutéale : dès le {(ovulation + timedelta(days=1)).strftime('%d/%m')}\n"
+            f"🚀 Prochaines règles : {prochaine.strftime('%d/%m')}"
+        )
+        self.label_prochaine.configure(text=texte_phases, justify="left")
 
 if __name__ == "__main__":
     app = TrackerApp()
