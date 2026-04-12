@@ -1,31 +1,82 @@
+import json
+import os
 from datetime import datetime, timedelta
 
-print("--- Bienvenue dans ton Tracker de Cycle ---")
+# Configuration du fichier de sauvegarde
+FICHIER_DATA = "data.json"
 
-# 1. On demande la date à l'utilisatrice avec un format précis
-while True:
-    date_input = input("Entrez le 1er jour de vos dernières règles (JJ/MM/AAAA) : ")
-    try:
-        # On transforme le texte en objet 'datetime'
-        derniere_date = datetime.strptime(date_input, "%d/%m/%Y")
-        break # Si ça marche, on sort de la boucle
-    except ValueError:
-        print("Format incorrect. Merci d'utiliser le format Jour/Mois/Année (ex: 20/05/2024).")
+def charger_donnees():
+    if os.path.exists(FICHIER_DATA):
+        try:
+            with open(FICHIER_DATA, "r") as f:
+                return json.load(f)
+        except:
+            return None
+    return None
 
-# 2. On demande la durée du cycle (avec la sécurité qu'on a apprise !)
-while True:
-    try:
-        duree_cycle = int(input("Durée moyenne de votre cycle (ex: 28) : "))
-        break
-    except ValueError:
-        print("Merci d'entrer un nombre entier.")
+def sauvegarder_donnees(date_str, cycle):
+    data = {"derniere_date": date_str, "duree_cycle": cycle}
+    with open(FICHIER_DATA, "w") as f:
+        json.dump(data, f)
+    print("✅ Données sauvegardées !")
 
-# 3. Les calculs
+# --- DEBUT DU PROGRAMME ---
+print("--- 🌸 Bienvenue dans ton Tracker de Cycle 🌸 ---")
+
+donnees = charger_donnees()
+
+if donnees:
+    print("📖 Données récupérées de la dernière session.")
+    derniere_date = datetime.strptime(donnees["derniere_date"], "%Y-%m-%d")
+    duree_cycle = donnees["duree_cycle"]
+    
+    # Option pour réinitialiser si on veut changer de cycle
+    choix = input("Voulez-vous mettre à jour vos données ? (o/n) : ").lower()
+    if choix == 'o':
+        donnees = None # On force la redemande ci-dessous
+
+if not donnees:
+    # --- SAISIE UTILISATRICE ---
+    while True:
+        date_input = input("Entrez le 1er jour de vos dernières règles (JJ/MM/AAAA) : ")
+        try:
+            derniere_date = datetime.strptime(date_input, "%d/%m/%Y")
+            break
+        except ValueError:
+            print("❌ Format incorrect (ex: 20/05/2024).")
+
+    while True:
+        try:
+            duree_cycle = int(input("Durée moyenne de votre cycle (ex: 28) : "))
+            break
+        except ValueError:
+            print("❌ Merci d'entrer un nombre entier.")
+    
+    # Sauvegarde immédiate
+    sauvegarder_donnees(derniere_date.strftime("%Y-%m-%d"), duree_cycle)
+
+# --- CALCULS ET AFFICHAGE ---
+aujourdhui = datetime.now()
+jours_ecoules = (aujourdhui - derniere_date).days
 prochaine_date = derniere_date + timedelta(days=duree_cycle)
-ovulation = derniere_date + timedelta(days=duree_cycle - 14)
 
-print("\n" + "="*30)
-print(f"RÉSUMÉ POUR LE CYCLE DU {derniere_date.strftime('%d %B %Y')}")
-print(f"📅 Prochaines règles : {prochaine_date.strftime('%d/%m/%Y')}")
-print(f"🥚 Ovulation estimée : {ovulation.strftime('%d/%m/%Y')}")
-print("="*30)
+print("\n" + "="*35)
+print(f"📍 Aujourd'hui : {aujourdhui.strftime('%d/%m/%Y')}")
+print(f"📅 Jour du cycle : {jours_ecoules + 1}")
+print(f"🚀 Prochaines règles : {prochaine_date.strftime('%d/%m/%Y')}")
+
+# Logique des phases
+if jours_ecoules < 0:
+    print("Statut : La date est dans le futur !")
+elif jours_ecoules <= 5:
+    print("Statut : Phase Menstruelle 🩸")
+elif jours_ecoules <= 13:
+    print("Statut : Phase Folliculaire ✨")
+elif jours_ecoules == 14:
+    print("Statut : Ovulation 🥚 (Fertilité maximale)")
+elif jours_ecoules <= duree_cycle:
+    print("Statut : Phase Lutéale 🌙")
+else:
+    retard = jours_ecoules - duree_cycle
+    print(f"Statut : Cycle terminé depuis {retard} jour(s). Nouveau cycle attendu !")
+print("="*35)
