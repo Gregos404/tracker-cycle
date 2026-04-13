@@ -6,6 +6,29 @@ from datetime import datetime, timedelta
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
+CONSEILS_PHASES = {
+    "Menstruelle": {
+        "titre": "🩸 Phase Menstruelle (Repos & Réconfort)",
+        "conseil": "Priorisez le sommeil. C'est le moment de ralentir. \nCôté nutrition : Aliments riches en fer (lentilles, épinards) et magnésium.",
+        "couleur": "#FF4B4B"
+    },
+    "Folliculaire": {
+        "titre": "✨ Phase Folliculaire (Énergie & Projets)",
+        "conseil": "Votre créativité est au top ! Idéal pour lancer de nouveaux projets. \nCôté nutrition : Aliments frais et fermentés.",
+        "couleur": "#85D2FF"
+    },
+    "Ovulation": {
+        "titre": "🥚 Ovulation (Force & Rayonnement)",
+        "conseil": "Pic d'énergie physique. Idéal pour des séances de sport intenses. \nCôté nutrition : Fibres et légumes crucifères.",
+        "couleur": "#FFD700"
+    },
+    "Lutéale": {
+        "titre": "🌙 Phase Lutéale (Ancrage & Préparation)",
+        "conseil": "Le rythme ralentit. Favorisez le yoga ou la marche. \nCôté nutrition : Glucides complexes (patate douce) pour limiter les fringales.",
+        "couleur": "#BA85FF"
+    }
+}
+
 class TrackerApp(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -39,6 +62,17 @@ class TrackerApp(ctk.CTk):
 
         self.label_prochaine = ctk.CTkLabel(self.result_frame, text="", font=("Arial", 14))
         self.label_prochaine.pack(pady=5)
+
+        # --- ZONE DE CONSEILS ---
+        self.advice_frame = ctk.CTkFrame(self, fg_color="transparent", border_width=1)
+        self.advice_frame.pack(pady=15, padx=20, fill="x")
+
+        self.label_advice_titre = ctk.CTkLabel(self.advice_frame, text="", font=("Arial", 14, "bold"))
+        self.label_advice_titre.pack(pady=(10, 5))
+
+        self.label_advice_texte = ctk.CTkLabel(self.advice_frame, text="Enregistrez une date pour voir les conseils.", 
+                                       wraplength=350, font=("Arial", 12))
+        self.label_advice_texte.pack(pady=(0, 10), padx=10)
 
         # Charger les données au démarrage
         self.charger_et_afficher()
@@ -103,6 +137,21 @@ class TrackerApp(ctk.CTk):
             f"🚀 Prochaines règles : {prochaine.strftime('%d/%m')}"
         )
         self.label_prochaine.configure(text=texte_phases, justify="left")
+        
+        # Détermination de la phase pour le conseil
+        if jour_actuel <= duree_regles:
+            phase_cle = "Menstruelle"
+        elif jour_actuel <= (duree_cycle - 15):
+            phase_cle = "Folliculaire"
+        elif (ovulation.day - 1) <= aujourdhui.day <= (ovulation.day + 1):
+            phase_cle = "Ovulation"
+        else:
+            phase_cle = "Lutéale"
+
+        # Mise à jour de la zone de conseils
+        info = CONSEILS_PHASES[phase_cle]
+        self.label_advice_titre.configure(text=info["titre"], text_color=info["couleur"])
+        self.label_advice_texte.configure(text=info["conseil"])
 
 if __name__ == "__main__":
     app = TrackerApp()
