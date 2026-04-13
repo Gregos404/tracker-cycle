@@ -70,30 +70,49 @@ class TrackerApp(ctk.CTk):
         for i, jour in enumerate(noms_jours):
             ctk.CTkLabel(self.cal_container, text=jour, width=40, font=("Arial", 12, "bold")).grid(row=0, column=i, padx=2, pady=2)
 
-        # Dessiner les cases
-        ovulation_j = debut_cycle + timedelta(days=duree_cycle - 14)
+        # Calcul des dates charnières
         fin_regles = debut_cycle + timedelta(days=duree_regles - 1)
+        ovulation_j = debut_cycle + timedelta(days=duree_cycle - 14)
+        debut_luteale = ovulation_j + timedelta(days=1)
 
         for r, semaine in enumerate(cal):
             for c, jour in enumerate(semaine):
-                if jour == 0: continue # Jour vide du mois
+                if jour == 0: continue 
                 
                 date_jour = datetime(maintenant.year, maintenant.month, jour)
-                bg_color = "#3D3D3D" # Couleur par défaut (gris)
+                bg_color = "#3D3D3D" # Gris par défaut
                 text_color = "white"
+                border_width = 0
+                border_color = None
 
-                # Logique de coloration
+                # 1. Attribution des couleurs par phase
                 if debut_cycle <= date_jour <= fin_regles:
-                    bg_color = "#FF4B4B" # Règles
+                    bg_color = CONSEILS_PHASES["Menstruelle"]["couleur"]
+                elif fin_regles < date_jour < (ovulation_j - timedelta(days=2)):
+                    bg_color = CONSEILS_PHASES["Folliculaire"]["couleur"]
+                    text_color = "black"
                 elif (ovulation_j - timedelta(days=2)) <= date_jour <= (ovulation_j + timedelta(days=1)):
-                    bg_color = "#FFD700" # Fertilité
+                    bg_color = CONSEILS_PHASES["Ovulation"]["couleur"]
                     text_color = "black"
-                elif date_jour.date() == maintenant.date():
-                    bg_color = "#FFFFFF" # Aujourd'hui
-                    text_color = "black"
+                elif (ovulation_j + timedelta(days=1)) < date_jour < (debut_cycle + timedelta(days=duree_cycle)):
+                    bg_color = CONSEILS_PHASES["Lutéale"]["couleur"]
 
-                case = ctk.CTkLabel(self.cal_container, text=str(jour), width=45, height=45, 
-                                    fg_color=bg_color, text_color=text_color, corner_radius=5)
+                # 2. Surlignage du jour actuel (Bordure blanche épaisse)
+                if date_jour.date() == maintenant.date():
+                    border_width = 2
+                    border_color = "white"
+
+                # VERSION CORRIGÉE : Uniquement le CTkButton pour supporter les bordures
+                case = ctk.CTkButton(self.cal_container, 
+                                     text=str(jour), 
+                                     width=45, 
+                                     height=45, 
+                                     fg_color=bg_color, 
+                                     text_color=text_color, 
+                                     hover=False,           # Désactive l'effet au survol
+                                     corner_radius=5, 
+                                     border_width=border_width, 
+                                     border_color=border_color)
                 case.grid(row=r+1, column=c, padx=2, pady=2)
 
     def calculer_logique(self, date_brute, duree_cycle, duree_regles):
